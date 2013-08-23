@@ -230,8 +230,36 @@ class Main extends ThreadServer<Client, Message>
 	}
 	
 	function checkHtmlPage(file_path:String) 
-	{
+	{		
+		if (build_mode == "flash")
+		{
+			var file_text:String = TextFileUtils.readTextFile(file_path);
+			
+			var _ereg:EReg = new EReg("swfobject.embedSWF(.+);", "");
+			
+			if (_ereg.match(file_text))
+			{
+				var _str:String = _ereg.matched(1);
+				_str = getStringBetween(_str, "(");
+				
+				var array:Array<String> = _str.split(",");
+				
+				var flash_player_version:Float = Std.parseFloat(getStringBetween(array[4], "\""));
+				
+				if (flash_player_version >= 11)
+				{
+					TextFileUtils.replaceString(file_path, "wmode:(.+)\"direct\"", "{}", "{},{wmode:\"direct\"}");
+				}
+			}
+		}
+		
 		TextFileUtils.replaceString(file_path, "WebSocketTest.js", "</body>", "\n\t<script type=\"text/javascript\" src=\"http://localhost:2000/WebSocketTest.js\"></script>\n</body>");
+	}
+	
+	private function getStringBetween(_str:String, _str2:String):String
+	{
+		var n:Int = _str.indexOf(_str2, 0);
+		return _str.substr(n+1, _str.length - n - 2);
 	}
 	
 	public function build(project_path:String, project_file:String) 
